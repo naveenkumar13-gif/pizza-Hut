@@ -19,7 +19,15 @@ function CreateOrder() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const formErrors = useActionData();
-  const username = useSelector((state) => state.user.username);
+  const {
+    username,
+    status: addressStatus,
+    position,
+    address,
+    error: errorAddress,
+  } = useSelector((state) => state.user);
+
+  const isLoadiongAddress = addressStatus === "loading";
   const dispatch = useDispatch();
   const [withPriority, setWithPriority] = useState(false);
   const cart = useSelector(getCart);
@@ -56,16 +64,37 @@ function CreateOrder() {
           </div>
         </div>
 
-        <div className="box">
+        <div className="box relative ">
           <label className="sm:basis-40">Address</label>
           <div className="grow">
             <input
-              className="input w-full"
+              className="input w-full  "
               type="text"
               name="address"
+              disabled={isLoadiongAddress}
+              defaultValue={address}
               required
             />
+            {addressStatus === "error" && (
+              <p className="mt-2 rounded-md bg-red-100 p-2 text-xs text-red-700">
+                {errorAddress}
+              </p>
+            )}
           </div>
+          <span className="absolute right-[3px] top-[3px] z-30 md:right-[5px] md:top-[5px]">
+            {!position.latitude && !position.longitude && (
+              <Button
+                disabled={isLoadiongAddress}
+                type="small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  dispatch(fetchAddress());
+                }}
+              >
+                get Postion
+              </Button>
+            )}
+          </span>
         </div>
 
         <div className="mb-12 flex items-center gap-5">
@@ -84,7 +113,16 @@ function CreateOrder() {
 
         <div>
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button disabled={isSubmitting} type="primary">
+          <input
+            type="hidden"
+            name="position"
+            value={
+              position.longitude && position.latitude
+                ? `${position.latitude},${position.longitude}`
+                : ""
+            }
+          />
+          <Button disabled={isSubmitting || isLoadiongAddress} type="primary">
             {isSubmitting ? "Placing order...." : `Order now ${totalPrice} `}
           </Button>
         </div>
@@ -96,6 +134,7 @@ function CreateOrder() {
 export async function action({ request }) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
+
   // priority box
   const order = {
     ...data,
@@ -112,6 +151,7 @@ export async function action({ request }) {
 
   const newOrder = await createOrder(order);
   store.dispatch(clearCart());
+  // console.log(ordesr);
   return redirect(`/order/${newOrder.id}`);
 }
 

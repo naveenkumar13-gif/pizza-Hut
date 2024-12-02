@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getAddress } from "../../service/apiGeocoding";
-import { act } from "react";
 
 function getPosition() {
   return new Promise(function (resolve, reject) {
@@ -54,7 +53,8 @@ const userSlice = createSlice({
       })
       .addCase(fetchAddress.rejected, (state, action) => {
         state.status = "error";
-        state.error = action.error.message;
+        state.error =
+          "there was a problem getting your address .Make sure to fill this fiels ";
       }),
 });
 
